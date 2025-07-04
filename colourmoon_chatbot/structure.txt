@@ -1,0 +1,44 @@
+colourmoon_chatbot/          ← Django Project Root
+│
+├── chatbot/                 ← App handling AI chatbot
+│   ├── migrations/
+│   ├── __init__.py
+│   ├── admin.py            ← Admin interface for leads/support
+│   ├── apps.py
+│   ├── models.py           ← Lead & SupportTicket models
+│   ├── views.py            ← Chatbot logic (AI + database)
+│   ├── urls.py             ← API endpoint routing
+│   └── utils.py            ← Chatbot state & validation (optional)
+│
+├── core/                   ← Admin reporting (future)
+│   ├── migrations/
+    ├── templates/admin/dashboard.html,leads_table.html,login.html,support_table.html
+│   ├── __init__.py
+│   ├── __init__.py
+│   ├── admin.py
+│   ├── apps.py
+│   ├── models.py           ← Tracking, analytics (optional)
+│   ├── views.py            ← Admin views (dashboard)
+│   ├── urls.py             ← Routes for admin/reporting
+│   └── charts.py           ← Chart rendering (optional)
+│
+├── colourmoon_chatbot/     ← Main project settings
+│   ├── __init__.py
+│   ├── asgi.py
+│   ├── settings.py         ← Add apps, MySQL, static, templates
+│   ├── urls.py             ← Main URL dispatcher
+│   └── wsgi.py
+│
+├── templates/              ← All HTML files
+│   └── index.html          ← Chatbot UI (unchanged)
+│
+├── static/                 ← All static assets
+│   ├── css/
+│   │   └── chatbot.css     ← Your existing CSS
+│   ├── js/
+│   │   └── chatbot.js      ← Handles UI & sends messages to API
+│   └── images/             ← Icons, logos
+│----.env
+├── manage.py               ← Django CLI entry point
+├── requirements.txt        ← pip freeze > requirements.txt
+└── README.md               ← (Optional) Project documentation

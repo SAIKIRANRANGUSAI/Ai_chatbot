@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>The Colour Moon Assistant</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    #chat-icon {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #042c64;
+      color: white;
+      font-size: 1.5rem;
+      padding: 0.75rem 1rem;
+      border-radius: 50%;
+      cursor: pointer;
+      z-index: 999;
+    }
+    #chat-container {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      width: 320px;
+      max-height: 500px;
+      background: #f4f4f4;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 999;
+    }
+    #chat-header {
+      background: #042c64;
+      color: white;
+      padding: 10px 15px;
+      font-weight: 600;
+    }
+    #chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background-color: #fff;
+    }
+    .chat-message {
+      padding: 10px 14px;
+      max-width: 75%;
+      border-radius: 16px;
+      line-height: 1.4;
+      font-size: 0.95rem;
+      white-space: pre-wrap;
+    }
+    .chat-user {
+      align-self: flex-end;
+      background-color: #DCF8C6;
+      text-align: right;
+    }
+    .chat-bot {
+      align-self: flex-start;
+      background-color: #e2e2e2;
+    }
+    #chat-input {
+      display: flex;
+      border-top: 1px solid #ccc;
+    }
+    #chat-input input {
+      flex: 1;
+      border: none;
+      padding: 10px;
+      font-size: 1rem;
+    }
+    #chat-input button {
+      background: #042c64;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div id="chat-icon">💬</div>
+<div id="chat-container" style="display: none; flex-direction: column;">
+
+
+  <div id="chat-header">💬 The Colour Moon Assistant</div>
+  <div id="chat-messages"></div>
+  <div id="chat-input">
+    <input type="text" id="user-input" placeholder="Type your message..." />
+    <button onclick="sendMessage()">Send</button>
+  </div>
+</div>
+
+<script>
+  const chatIcon = document.getElementById("chat-icon");
+  const chatContainer = document.getElementById("chat-container");
+  const chatMessages = document.getElementById("chat-messages");
+  const userInput = document.getElementById("user-input");
+
+  chatIcon.addEventListener("click", () => {
+    chatContainer.style.display = chatContainer.style.display === "none" ? "flex" : "none";
+    if (!chatMessages.innerHTML.trim()) {
+      setTimeout(() => {
+        appendMessage("bot", "Hi! 👋 I'm your assistant from The Colour Moon. How can I help you today? (e.g., website, app, SEO, support)");
+      }, 300);
+    }
+  });
+
+  function appendMessage(sender, text) {
+    const msg = document.createElement("div");
+    msg.className = `chat-message chat-${sender}`;
+    msg.innerText = text;
+    chatMessages.appendChild(msg);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function sendMessage() {
+    const message = userInput.value.trim();
+    if (!message) return;
+    appendMessage("user", message);
+    userInput.value = "";
+
+    fetch("/api/chat/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie('csrftoken')
+      },
+      body: JSON.stringify({ message })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.reply) appendMessage("bot", data.reply);
+    })
+    .catch(err => {
+      appendMessage("bot", "⚠️ Something went wrong. Please try again.");
+      console.error(err);
+    });
+  }
+
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return decodeURIComponent(parts.pop().split(';').shift());
+  }
+
+  userInput.addEventListener("keypress", e => {
+    if (e.key === "Enter") sendMessage();
+  });
+</script>
+
+</body>
+</html>

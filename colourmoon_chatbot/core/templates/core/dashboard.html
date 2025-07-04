@@ -1,0 +1,302 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <title>📊 Admin Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      overflow-x: hidden;
+      background-color: #f8f9fa;
+    }
+    .sidebar {
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 250px;
+      background-color: #ffffff;
+      padding-top: 20px;
+      border-right: 1px solid #dee2e6;
+      z-index: 1000;
+    }
+    .sidebar .nav-link {
+      color: #333;
+      padding: 10px 20px;
+      font-weight: 500;
+    }
+    .sidebar .nav-link:hover {
+      background-color: #e9ecef;
+    }
+    .sidebar .nav-link.active {
+      background-color: #007bff;
+      color: white;
+    }
+    .content {
+      margin-left: 250px;
+      padding: 20px;
+    }
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+      }
+      .content {
+        margin-left: 0;
+      }
+    }
+    .chart-container {
+      position: relative;
+      width: 100%;
+      height: 300px;
+    }
+    canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+    .table td, .table th {
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h4 class="px-3 mb-4">Admin Panel</h4>
+    <ul class="nav flex-column">
+      <li class="nav-item">
+        <a class="nav-link active" href="/core/dashboard/">📊 Dashboard</a>
+      </li>
+      {% if admin_user.can_view_leads %}
+      <li class="nav-item">
+        <a class="nav-link" href="/core/dashboard/leads/">📋 Leads</a>
+      </li>
+      {% endif %}
+      {% if admin_user.can_view_support %}
+      <li class="nav-item">
+        <a class="nav-link" href="/core/dashboard/support/">🛠 Support</a>
+      </li>
+      {% endif %}
+      <li class="nav-item">
+        <a class="nav-link" href="/core/change-password/">🔒 Change Password</a>
+      </li>
+      {% if admin_user.can_manage_roles %}
+      <li class="nav-item">
+        <a class="nav-link" href="/core/admin/roles/">👑 Admin Roles</a>
+      </li>
+      {% endif %}
+      <li class="nav-item">
+        <a class="nav-link text-danger" href="/core/logout/">🚪 Logout</a>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Main Content -->
+  <div class="content">
+    <div class="container-fluid py-4">
+      <h2 class="fw-bold mb-4">📊 Admin Dashboard</h2>
+
+      <!-- Chart -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-body">
+          <h5 class="card-title mb-3">📈 Leads vs Support - Last 7 Days</h5>
+          <div class="chart-container">
+            <canvas id="activityChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="row g-4 mb-4">
+        <div class="col-md-3 col-sm-6">
+          <div class="card text-center shadow-sm">
+            <div class="card-body">
+              <h6>📋 Leads Today</h6>
+              <p class="fs-3 text-primary">{{ leads_today }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+          <div class="card text-center shadow-sm">
+            <div class="card-body">
+              <h6>🛠 Support Today</h6>
+              <p class="fs-3 text-danger">{{ support_today|default:0 }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+          <div class="card text-center shadow-sm">
+            <div class="card-body">
+              <h6>📦 Total Leads</h6>
+              <p class="fs-3 text-dark">{{ total_leads }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+          <div class="card text-center shadow-sm">
+            <div class="card-body">
+              <h6>🔧 Total Support Tickets</h6>
+              <p class="fs-3 text-dark">{{ total_support }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Data Tables -->
+      <div class="row g-4 mb-4">
+        <div class="col-md-6">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title">🕒 Recent Leads</h5>
+              <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Name</th>
+                      <th>Service</th>
+                      <th>Phone</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for lead in recent_leads %}
+                    <tr>
+                      <td>{{ lead.name|default:"-" }}</td>
+                      <td>{{ lead.service|title }}</td>
+                      <td>{{ lead.phone|default:"-" }}</td>
+                      <td>{{ lead.created_at|date:"M d, H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="text-center text-muted">No recent leads</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title">🕒 Recent Support Tickets</h5>
+              <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Name</th>
+                      <th>Domain</th>
+                      <th>Issue</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for ticket in recent_supports %}
+                    <tr>
+                      <td>{{ ticket.name|default:"-" }}</td>
+                      <td>{{ ticket.domain|default:"-" }}</td>
+                      <td>{{ ticket.issue|truncatewords:6 }}</td>
+                      <td>{{ ticket.created_at|date:"M d, H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="text-center text-muted">No recent tickets</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="text-center mb-4">
+        {% if admin_user.can_view_leads %}
+        <a href="/core/dashboard/leads/" class="btn btn-outline-primary me-2">📋 View Leads</a>
+        {% endif %}
+        {% if admin_user.can_view_support %}
+        <a href="/core/dashboard/support/" class="btn btn-outline-danger">🛠 View Support</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart Script -->
+  <script>
+    const leadData = {{ lead_data|safe }};
+    const supportData = {{ support_data|safe }};
+    const labels = leadData.map(item => item.date);
+    const leadCounts = leadData.map(item => item.count);
+    const supportCounts = supportData.map(item => item.count);
+
+    new Chart(document.getElementById('activityChart'), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Leads',
+            data: leadCounts,
+            borderColor: '#007bff',
+            backgroundColor: 'rgba(0, 123, 255, 0.2)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 4
+          },
+          {
+            label: 'Support Tickets',
+            data: supportCounts,
+            borderColor: '#dc3545',
+            backgroundColor: 'rgba(220, 53, 69, 0.2)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: {
+            mode: 'index',
+            intersect: false
+          }
+        },
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'Date',
+              font: { weight: 'bold' }
+            },
+            grid: { display: false }
+          },
+          y: {
+            beginAtZero: true,
+            suggestedMax: Math.max(...leadCounts.concat(supportCounts)) + 2,
+            title: {
+              display: true,
+              text: 'Count',
+              font: { weight: 'bold' }
+            },
+            grid: {
+              color: '#f1f1f1'
+            },
+            ticks: {
+              precision: 0,
+              stepSize: 1
+            }
+          }
+        }
+      }
+    });
+  </script>
+
+</body>
+</html>

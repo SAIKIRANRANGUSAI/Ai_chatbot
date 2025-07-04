@@ -1,0 +1,103 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <title>✏️ Edit Admin Role</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .sidebar {
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 250px;
+      background-color: #ffffff;
+      padding-top: 20px;
+      border-right: 1px solid #dee2e6;
+    }
+    .sidebar .nav-link {
+      color: #333;
+      padding: 10px 20px;
+      font-weight: 500;
+    }
+    .sidebar .nav-link:hover {
+      background-color: #e9ecef;
+    }
+    .sidebar .nav-link.active {
+      background-color: #007bff;
+      color: white;
+    }
+    .content {
+      margin-left: 250px;
+      padding: 20px;
+    }
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+      }
+      .content {
+        margin-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <h4 class="px-3 mb-4">Admin Panel</h4>
+  <ul class="nav flex-column">
+    <li class="nav-item">
+      <a class="nav-link" href="/core/dashboard/">📊 Dashboard</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="/core/dashboard/leads/">📋 Leads</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="/core/dashboard/support/">🛠 Support</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="/core/change-password/">🔒 Change Password</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link active" href="/core/admin/roles/">👑 Admin Roles</a>
+    </li>
+  </ul>
+</div>
+
+<!-- Main Content -->
+<div class="content">
+  <div class="container py-4">
+    <h3 class="fw-bold">✏️ Edit Roles for {{ admin.username }}</h3>
+    <form method="POST">
+      {% csrf_token %}
+      <div class="form-check mb-2">
+        <input class="form-check-input" type="checkbox" name="has_dashboard_access" {% if admin.has_dashboard_access %}checked{% endif %}>
+        <label class="form-check-label">Dashboard Access</label>
+      </div>
+      <div class="form-check mb-2">
+        <input class="form-check-input" type="checkbox" name="can_view_leads" {% if admin.can_view_leads %}checked{% endif %}>
+        <label class="form-check-label">Can View Leads</label>
+      </div>
+      <div class="form-check mb-2">
+        <input class="form-check-input" type="checkbox" name="can_view_support" {% if admin.can_view_support %}checked{% endif %}>
+        <label class="form-check-label">Can View Support</label>
+      </div>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" name="can_manage_roles" {% if admin.can_manage_roles %}checked{% endif %}>
+        <label class="form-check-label">Can Manage Roles</label>
+      </div>
+      <button class="btn btn-success">Save Changes</button>
+      <a href="/core/admin/roles/" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+  </div>
+</div>
+
+</body>
+</html>

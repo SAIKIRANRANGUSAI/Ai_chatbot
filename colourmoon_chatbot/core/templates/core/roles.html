@@ -1,0 +1,38 @@
+{% extends "core/dashboard.html" %}
+{% block content %}
+<div class="container mt-5">
+  <h3>👑 Manage Admin Roles</h3>
+  <form method="post" class="mt-4">
+    {% csrf_token %}
+    <div class="row align-items-end">
+      <div class="col-md-4">
+        <label class="form-label">Select User</label>
+        <select name="user_id" class="form-select">
+          {% for u in users %}
+            <option value="{{ u.id }}" {% if selected_user and u.id == selected_user.id %}selected{% endif %}>
+              {{ u.username }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" name="can_view_leads" id="leads"
+            {% if selected_user and selected_user.can_view_leads %}checked{% endif %}>
+          <label class="form-check-label" for="leads">📋 Leads</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="can_view_support" id="support"
+            {% if selected_user and selected_user.can_view_support %}checked{% endif %}>
+          <label class="form-check-label" for="support">🛠 Support</label>
+        </div>
+      </div>
+
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-success w-100">Update</button>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}
