@@ -4,7 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ead9c80e-710d-4d77-8c39-d7666f879d55" name="Changes" comment="" />
+    <list default="true" id="ead9c80e-710d-4d77-8c39-d7666f879d55" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/colourmoon_chatbot/.env" beforeDir="false" afterPath="$PROJECT_DIR$/colourmoon_chatbot/.env" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
