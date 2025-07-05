@@ -42,3 +42,5 @@ colourmoon_chatbot/          ← Django Project Root
 ├── manage.py               ← Django CLI entry point
 ├── requirements.txt        ← pip freeze > requirements.txt
 └── README.md               ← (Optional) Project documentation
+
+#test
