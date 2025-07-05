@@ -129,15 +129,18 @@ def chatbot_api(request):
 
         if session["mode"] in ["lead", "seo", "dm"]:
             steps = {
-                "lead": ["details", "type", "cms", "pages", "budget", "name", "phone", "email"],
+                "lead": ["details", "type", "budget", "name", "phone", "email"],  # Removed pages, cms from mandatory
                 "seo": ["domain", "goals", "budget", "name", "phone", "email"],
                 "dm": ["platform", "goals", "budget", "name", "phone", "email"]
             }
+
+            optional_fields = {
+                "lead": ["pages", "cms"],
+            }
+
             prompts = {
                 "details": "Just to confirm – do you have a reference like BookMyShow or similar?",
                 "type": "Is this for booking, e-commerce, or something else?",
-                "cms": "Do you need a CMS to manage content easily? (Yes/No)",
-                "pages": "How many pages do you expect? (e.g., 5–10)",
                 "budget": "💰 What's your estimated budget? (e.g., 30000, 45k)",
                 "name": "👤 Your name please?",
                 "phone": "📞 Your phone number?",
@@ -156,6 +159,16 @@ def chatbot_api(request):
                         continue
                     return JsonResponse({"reply": prompts[field]})
 
+            # Collect optional fields like 'pages' and 'cms' once required data is filled
+            if session["mode"] == "lead":
+                if not data.get("pages") and not data.get("cms"):
+                    data["pages"] = extract_value("pages", message)
+                    data["cms"] = extract_value("cms", message)
+                    user_sessions[session_id] = session
+                    return JsonResponse({
+                                            "reply": "If you know the number of pages and if CMS is required, please mention them (e.g., 5 pages, CMS yes). Else, we can proceed."})
+
+            # ✅ Save to Lead model
             Lead.objects.create(
                 name=data["name"],
                 phone=data["phone"],
@@ -173,7 +186,8 @@ def chatbot_api(request):
                 created_at=timezone.now()
             )
             session["submitted"] = True
-            return JsonResponse({"reply": "✅ All done! We've saved your project info. Our team will connect with you shortly. 📞 8978553778"})
+            return JsonResponse({
+                                    "reply": "✅ All done! We've saved your project info. Our team will connect with you shortly. 📞 8978553778"})
 
         return JsonResponse({"reply": ask_ai(message)})
 
@@ -229,7 +243,10 @@ def extract_value(field, msg):
     if field == "email": return extract_email(msg)
     if field == "budget": return extract_budget(msg)
     if field == "domain": return extract_domain(msg)
+    if field == "pages": return msg if "page" in msg.lower() else None
+    if field == "cms": return msg if "cms" in msg.lower() or msg.lower() in ["yes", "no"] else None
     return msg.strip()
+
 
 def get_ip(request):
     x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")

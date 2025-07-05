@@ -7,59 +7,22 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body {
-      overflow-x: hidden;
-      background-color: #f8f9fa;
-    }
+    body { overflow-x: hidden; background-color: #f8f9fa; }
     .sidebar {
-      height: 100vh;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 250px;
-      background-color: #ffffff;
-      padding-top: 20px;
-      border-right: 1px solid #dee2e6;
-      z-index: 1000;
+      height: 100vh; position: fixed; top: 0; left: 0; width: 250px;
+      background-color: #ffffff; padding-top: 20px; border-right: 1px solid #dee2e6; z-index: 1000;
     }
-    .sidebar .nav-link {
-      color: #333;
-      padding: 10px 20px;
-      font-weight: 500;
-    }
-    .sidebar .nav-link:hover {
-      background-color: #e9ecef;
-    }
-    .sidebar .nav-link.active {
-      background-color: #007bff;
-      color: white;
-    }
-    .content {
-      margin-left: 250px;
-      padding: 20px;
-    }
+    .sidebar .nav-link { color: #333; padding: 10px 20px; font-weight: 500; }
+    .sidebar .nav-link:hover { background-color: #e9ecef; }
+    .sidebar .nav-link.active { background-color: #007bff; color: white; }
+    .content { margin-left: 250px; padding: 20px; }
     @media (max-width: 768px) {
-      .sidebar {
-        width: 100%;
-        height: auto;
-        position: relative;
-      }
-      .content {
-        margin-left: 0;
-      }
+      .sidebar { width: 100%; height: auto; position: relative; }
+      .content { margin-left: 0; }
     }
-    .chart-container {
-      position: relative;
-      width: 100%;
-      height: 300px;
-    }
-    canvas {
-      width: 100% !important;
-      height: 100% !important;
-    }
-    .table td, .table th {
-      vertical-align: middle;
-    }
+    .chart-container { position: relative; width: 100%; height: 300px; }
+    canvas { width: 100% !important; height: 100% !important; }
+    .table td, .table th { vertical-align: middle; }
   </style>
 </head>
 <body>
@@ -103,7 +66,15 @@
       <!-- Chart -->
       <div class="card shadow-sm mb-4">
         <div class="card-body">
-          <h5 class="card-title mb-3">📈 Leads vs Support - Last 7 Days</h5>
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="card-title mb-0">📈 Leads vs Support</h5>
+            <select id="timeRange" class="form-select form-select-sm w-auto" onchange="onRangeChange(this)">
+              <option value="1" {% if selected_range == 1 %}selected{% endif %}>Today</option>
+              <option value="7" {% if selected_range == 7 %}selected{% endif %}>Last 7 Days</option>
+              <option value="30" {% if selected_range == 30 %}selected{% endif %}>This Month</option>
+              <option value="365" {% if selected_range == 365 %}selected{% endif %}>This Year</option>
+            </select>
+          </div>
           <div class="chart-container">
             <canvas id="activityChart"></canvas>
           </div>
@@ -113,13 +84,32 @@
       <!-- Stats -->
       <div class="row g-4 mb-4">
         <div class="col-md-3 col-sm-6">
-          <div class="card text-center shadow-sm">
-            <div class="card-body">
-              <h6>📋 Leads Today</h6>
-              <p class="fs-3 text-primary">{{ leads_today }}</p>
-            </div>
-          </div>
-        </div>
+  <div class="card text-center shadow-sm">
+    <div class="card-body">
+      <h6>📋 Leads Today</h6>
+      <p class="fs-3 text-primary">{{ leads_today }}</p>
+    </div>
+  </div>
+</div>
+
+<div class="col-md-3 col-sm-6">
+  <div class="card text-center shadow-sm">
+    <div class="card-body">
+      <h6>💬 Chats Today</h6>
+      <p class="fs-3 text-info">{{ chats_today|default:"0" }}</p>
+    </div>
+  </div>
+</div>
+
+<div class="col-md-3 col-sm-6">
+  <div class="card text-center shadow-sm">
+    <div class="card-body">
+      <h6>🧠 Total Conversations</h6>
+      <p class="fs-3 text-secondary">{{ total_conversations|default:"0" }}</p>
+    </div>
+  </div>
+</div>
+
         <div class="col-md-3 col-sm-6">
           <div class="card text-center shadow-sm">
             <div class="card-body">
@@ -263,10 +253,7 @@
         maintainAspectRatio: false,
         plugins: {
           legend: { position: 'top' },
-          tooltip: {
-            mode: 'index',
-            intersect: false
-          }
+          tooltip: { mode: 'index', intersect: false }
         },
         scales: {
           x: {
@@ -285,18 +272,17 @@
               text: 'Count',
               font: { weight: 'bold' }
             },
-            grid: {
-              color: '#f1f1f1'
-            },
-            ticks: {
-              precision: 0,
-              stepSize: 1
-            }
+            grid: { color: '#f1f1f1' },
+            ticks: { precision: 0, stepSize: 1 }
           }
         }
       }
     });
-  </script>
 
+    function onRangeChange(select) {
+      const range = select.value;
+      window.location.href = `/core/dashboard/?range=${range}`;
+    }
+  </script>
 </body>
 </html>

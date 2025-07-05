@@ -2,18 +2,20 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.utils import timezone
 from django.db.models import Count
-from django.db.models.functions import TruncDate
-from django.contrib import messages
 from django.db import IntegrityError
+from django.core.paginator import Paginator
 from datetime import timedelta
 import json
 import logging
-from django.core.paginator import Paginator
 from chatbot.models import Lead, SupportTicket
 from .models import CustomAdmin
-
-# Set up logging
+from django.db.models import Q
 logger = logging.getLogger(__name__)
+import openpyxl
+from openpyxl.utils import get_column_letter
+from django.http import HttpResponse
+from django.db.models import Q
+from chatbot.models import Lead, SupportTicket
 
 # --------------------------
 # Session Auth Helpers
@@ -36,7 +38,6 @@ def login_view(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
-
         try:
             user = CustomAdmin.objects.get(username=username)
             if not user.check_password(password):
@@ -48,7 +49,6 @@ def login_view(request):
             return render(request, "core/login.html", {
                 "error": "Invalid username or password"
             })
-
     return render(request, "core/login.html")
 
 def logout_view(request):
@@ -71,54 +71,81 @@ def dashboard(request):
     start_of_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
     end_of_today = now.replace(hour=23, minute=59, second=59, microsecond=999999)
 
-    # Accurate "Today" counts using datetime range
-    leads_today = Lead.objects.filter(created_at__range=(start_of_today, end_of_today)).count()
+    # Get range from URL query (?range=7, 30, 365)
+    try:
+        range_days = int(request.GET.get('range', 7))
+    except ValueError:
+        range_days = 7
 
-    support_today = SupportTicket.objects.filter(created_at__range=(start_of_today, end_of_today)).count()
-
-    def get_last_7_days_counts(model):
-        days = []
-        for i in range(6, -1, -1):
-            day = now - timedelta(days=i)
-            start = day.replace(hour=0, minute=0, second=0, microsecond=0)
-            end = day.replace(hour=23, minute=59, second=59, microsecond=999999)
+    def get_last_days_counts(model, days):
+        results = []
+        for i in range(days - 1, -1, -1):
+            date = now - timedelta(days=i)
+            start = date.replace(hour=0, minute=0, second=0, microsecond=0)
+            end = date.replace(hour=23, minute=59, second=59, microsecond=999999)
             count = model.objects.filter(created_at__range=(start, end)).count()
-            days.append({
-                "date": day.strftime("%Y-%m-%d"),
+            results.append({
+                "date": date.strftime("%Y-%m-%d"),
                 "count": count
             })
-        return days
+        return results
 
-    lead_data = get_last_7_days_counts(Lead)
-    support_data = get_last_7_days_counts(SupportTicket)
+    lead_data = get_last_days_counts(Lead, range_days)
+    support_data = get_last_days_counts(SupportTicket, range_days)
+
+    leads_today = Lead.objects.filter(created_at__range=(start_of_today, end_of_today)).count()
+    support_today = SupportTicket.objects.filter(created_at__range=(start_of_today, end_of_today)).count()
+
+    # Placeholder: Replace below with actual Chat/Conversation model if exists
+    chats_today_count = leads_today + support_today
+    total_conversation_count = Lead.objects.count() + SupportTicket.objects.count()
 
     return render(request, 'core/dashboard.html', {
         'leads_today': leads_today,
-        'total_leads': Lead.objects.count(),
         'support_today': support_today,
+        'total_leads': Lead.objects.count(),
         'total_support': SupportTicket.objects.count(),
         'lead_data': json.dumps(lead_data),
         'support_data': json.dumps(support_data),
         'admin_user': admin_user,
         'recent_leads': Lead.objects.order_by('-created_at')[:5],
         'recent_supports': SupportTicket.objects.order_by('-created_at')[:5],
+        'chats_today': chats_today_count,
+        'total_conversations': total_conversation_count,
+        'selected_range': range_days,
     })
-
 
 # --------------------------
 # Leads and Support Views
 # --------------------------
+
+
 
 def leads_table(request):
     admin_user = get_logged_in_admin(request)
     if not admin_user:
         return redirect('/core/login/')
     if not admin_user.can_view_leads:
-        logger.warning(f"Access denied for user {admin_user.username} to leads table")
         return HttpResponse("Access denied", status=403)
 
-    leads_list = Lead.objects.all().order_by('-created_at')
-    paginator = Paginator(leads_list, 10)  # 10 leads per page
+    query = request.GET.get('q', '').strip()
+    leads_list = Lead.objects.all()
+
+    if query:
+        leads_list = leads_list.filter(
+            Q(name__icontains=query) |
+            Q(phone__icontains=query) |
+            Q(email__icontains=query) |
+            Q(service__icontains=query) |
+            Q(requirement__icontains=query) |
+            Q(budget__icontains=query)
+        )
+
+    if request.GET.get('export') == 'excel':
+        return export_leads_to_excel(leads_list)
+
+    leads_list = leads_list.order_by('-created_at')
+    paginator = Paginator(leads_list, 10)
     page_number = request.GET.get('page')
     leads = paginator.get_page(page_number)
 
@@ -127,16 +154,31 @@ def leads_table(request):
         "admin_user": admin_user
     })
 
+
 def support_table(request):
     admin_user = get_logged_in_admin(request)
     if not admin_user:
         return redirect('/core/login/')
     if not admin_user.can_view_support:
-        logger.warning(f"Access denied for user {admin_user.username} to support table")
         return HttpResponse("Access denied", status=403)
 
-    tickets_list = SupportTicket.objects.all().order_by('-created_at')
-    paginator = Paginator(tickets_list, 10)  # 10 tickets per page
+    query = request.GET.get('q', '').strip()
+    tickets_list = SupportTicket.objects.all()
+
+    if query:
+        tickets_list = tickets_list.filter(
+            Q(name__icontains=query) |
+            Q(phone__icontains=query) |
+            Q(domain__icontains=query) |
+            Q(issue__icontains=query) |
+            Q(browser__icontains=query)
+        )
+
+    if request.GET.get('export') == 'excel':
+        return export_support_to_excel(tickets_list)
+
+    tickets_list = tickets_list.order_by('-created_at')
+    paginator = Paginator(tickets_list, 10)
     page_number = request.GET.get('page')
     tickets = paginator.get_page(page_number)
 
@@ -144,6 +186,8 @@ def support_table(request):
         "tickets": tickets,
         "admin_user": admin_user
     })
+
+
 
 # --------------------------
 # Admin Role Management Views
@@ -154,7 +198,6 @@ def admin_roles_view(request):
     if not admin_user:
         return redirect('/core/login/')
     if not admin_user.can_manage_roles:
-        logger.warning(f"Access denied for user {admin_user.username} to admin roles")
         return HttpResponse("Access denied", status=403)
 
     if request.method == 'POST':
@@ -193,13 +236,11 @@ def update_admin_role(request, admin_id):
     if not admin_user:
         return redirect('/core/login/')
     if not admin_user.can_manage_roles:
-        logger.warning(f"Access denied for user {admin_user.username} to update admin role")
         return HttpResponse("Access denied", status=403)
 
     try:
         target = CustomAdmin.objects.get(id=admin_id)
     except CustomAdmin.DoesNotExist:
-        logger.error(f"Admin not found: {admin_id}")
         return HttpResponse("Admin not found", status=404)
 
     if request.method == 'POST':
@@ -243,3 +284,56 @@ def change_password_view(request):
     return render(request, "core/change_password.html", {
         "admin_user": admin_user
     })
+
+def export_leads_to_excel(leads_queryset):
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = "Leads"
+
+    headers = ['Name', 'Phone', 'Email', 'Service', 'Type', 'Pages', 'CMS', 'Payment', 'Budget', 'Requirement', 'Created At']
+    sheet.append(headers)
+
+    for lead in leads_queryset:
+        sheet.append([
+            lead.name,
+            lead.phone,
+            lead.email,
+            lead.service,
+            lead.type,
+            lead.pages,
+            lead.cms,
+            lead.payment,
+            lead.budget,
+            lead.requirement,
+            lead.created_at.strftime('%Y-%m-%d %H:%M'),
+        ])
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=leads.xlsx'
+    workbook.save(response)
+    return response
+
+
+def export_support_to_excel(tickets_queryset):
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = "Support Tickets"
+
+    headers = ['Name', 'Phone', 'Domain', 'Issue', 'Browser', 'IP', 'Created At']
+    sheet.append(headers)
+
+    for ticket in tickets_queryset:
+        sheet.append([
+            ticket.name,
+            ticket.phone,
+            ticket.domain,
+            ticket.issue,
+            ticket.browser,
+            ticket.ip,
+            ticket.created_at.strftime('%Y-%m-%d %H:%M'),
+        ])
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=support_tickets.xlsx'
+    workbook.save(response)
+    return response
