@@ -6,14 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="ead9c80e-710d-4d77-8c39-d7666f879d55" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/colourmoon_chatbot/chatbot/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/colourmoon_chatbot/chatbot/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/colourmoon_chatbot/core/templates/core/admin_roles.html" beforeDir="false" afterPath="$PROJECT_DIR$/colourmoon_chatbot/core/templates/core/admin_roles.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/colourmoon_chatbot/core/templates/core/change_password.html" beforeDir="false" afterPath="$PROJECT_DIR$/colourmoon_chatbot/core/templates/core/change_password.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/colourmoon_chatbot/core/templates/core/dashboard.html" beforeDir="false" afterPath="$PROJECT_DIR$/colourmoon_chatbot/core/templates/core/dashboard.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/colourmoon_chatbot/core/templates/core/leads_table.html" beforeDir="false" afterPath="$PROJECT_DIR$/colourmoon_chatbot/core/templates/core/leads_table.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/colourmoon_chatbot/core/templates/core/login.html" beforeDir="false" afterPath="$PROJECT_DIR$/colourmoon_chatbot/core/templates/core/login.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/colourmoon_chatbot/core/templates/core/support_table.html" beforeDir="false" afterPath="$PROJECT_DIR$/colourmoon_chatbot/core/templates/core/support_table.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/colourmoon_chatbot/core/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/colourmoon_chatbot/core/views.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
